@@ -1,0 +1,190 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Сюрприз 🎁</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            background: linear-gradient(to top, #0d1b2a, #1b263b);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3em;
+            z-index: 10;
+            position: relative;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎉 С Днём рождения! 🎂<br> Пусть мечты сбываются! ✨</h1>
+    <canvas id="fireworks"></canvas>
+    <canvas id="balloons"></canvas>
+
+    <script>
+        // --- Настройка холстов ---
+        const fwCanvas = document.getElementById("fireworks");
+        const fwCtx = fwCanvas.getContext("2d");
+        const blCanvas = document.getElementById("balloons");
+        const blCtx = blCanvas.getContext("2d");
+
+        let w = (fwCanvas.width = blCanvas.width = window.innerWidth);
+        let h = (fwCanvas.height = blCanvas.height = window.innerHeight);
+
+        window.addEventListener("resize", () => {
+            w = fwCanvas.width = blCanvas.width = window.innerWidth;
+            h = fwCanvas.height = blCanvas.height = window.innerHeight;
+        });
+
+        // --- Фейерверки ---
+        const fireworks = [];
+        const particles = [];
+
+        class Firework {
+            constructor(x, y, targetY, color) {
+                this.x = x;
+                this.y = y;
+                this.targetY = targetY;
+                this.color = color;
+                this.speed = 8;
+            }
+            update() {
+                this.y -= this.speed;
+                if (this.y <= this.targetY) {
+                    this.explode();
+                    return true;
+                }
+                return false;
+            }
+            draw() {
+                fwCtx.beginPath();
+                fwCtx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                fwCtx.fillStyle = this.color;
+                fwCtx.fill();
+            }
+            explode() {
+                for (let i = 0; i < 50; i++) {
+                    particles.push(new Particle(this.x, this.y, this.color));
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.radius = Math.random() * 3 + 2;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 4 + 1;
+                this.life = 100;
+            }
+            update() {
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed + 0.3;
+                this.life--;
+                this.radius *= 0.96;
+            }
+            draw() {
+                fwCtx.beginPath();
+                fwCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                fwCtx.fillStyle = this.color;
+                fwCtx.fill();
+            }
+        }
+
+        function fireworksLoop() {
+            fwCtx.fillStyle = "rgba(0,0,0,0.2)";
+            fwCtx.fillRect(0, 0, w, h);
+
+            for (let i = fireworks.length - 1; i >= 0; i--) {
+                fireworks[i].draw();
+                if (fireworks[i].update()) fireworks.splice(i, 1);
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].draw();
+                particles[i].update();
+                if (particles[i].life <= 0) particles.splice(i, 1);
+            }
+
+            if (Math.random() < 0.05) {
+                const x = Math.random() * w;
+                const y = h;
+                const targetY = Math.random() * h * 0.5;
+                const colors = ["#ff4081", "#ffd700", "#40c4ff", "#69f0ae"];
+                fireworks.push(new Firework(x, y, targetY, colors[Math.floor(Math.random() * colors.length)]));
+            }
+
+            requestAnimationFrame(fireworksLoop);
+        }
+
+        fireworksLoop();
+
+        // --- Шарики ---
+        const balloons = [];
+
+        class Balloon {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * w;
+                this.y = h + Math.random() * 200;
+                this.size = 30 + Math.random() * 20;
+                this.color = ["#ff4081", "#ffd700", "#40c4ff", "#69f0ae", "#ff7043"][Math.floor(Math.random() * 5)];
+                this.speed = 1 + Math.random() * 2.5;
+                this.swing = Math.random() * 50;
+                this.angle = Math.random() * Math.PI * 2;
+            }
+            update() {
+                this.y -= this.speed;
+                this.x += Math.sin(this.angle) * 0.5;
+                this.angle += 0.02;
+                if (this.y < -this.size) this.reset();
+            }
+            draw() {
+                blCtx.beginPath();
+                blCtx.ellipse(this.x, this.y, this.size * 0.6, this.size, 0, 0, Math.PI * 2);
+                blCtx.fillStyle = this.color;
+                blCtx.fill();
+
+                // верёвочка
+                blCtx.beginPath();
+                blCtx.moveTo(this.x, this.y + this.size);
+                blCtx.lineTo(this.x, this.y + this.size + 40);
+                blCtx.strokeStyle = "white";
+                blCtx.lineWidth = 1;
+                blCtx.stroke();
+            }
+        }
+
+        for (let i = 0; i < 15; i++) balloons.push(new Balloon());
+
+        function balloonsLoop() {
+            blCtx.clearRect(0, 0, w, h);
+            for (let balloon of balloons) {
+                balloon.update();
+                balloon.draw();
+            }
+            requestAnimationFrame(balloonsLoop);
+        }
+
+        balloonsLoop();
+    </script>
+</body>
+</html>
